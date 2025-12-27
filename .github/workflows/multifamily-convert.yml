@@ -1,60 +1,70 @@
-name: Build and deploy .NET Core application to Function App multifamily-convert
+name: Build and deploy .NET Core application to Function App
+
 on:
   push:
     branches:
-    - main
+      - main
+  workflow_dispatch:
+
 permissions:
   id-token: write
   contents: read
+
 env:
-  AZURE_FUNCTIONAPP_NAME: multifamily-convert-asfchnbjbaf5e0c0
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: ./published
-  CONFIGURATION: Release
-  DOTNET_CORE_VERSION: 10.0.x
-  WORKING_DIRECTORY: azure-excel-processor
-  DOTNET_CORE_VERSION_INPROC: 6.0.x
+  AZURE_FUNCTIONAPP_NAME: 'multifamily-convert-asfchnbjbaf5e0c0'
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: './published'
+  CONFIGURATION: 'Release'
+  DOTNET_VERSION: '10.0.x'
+  WORKING_DIRECTORY: 'azure-excel-processor'
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET SDK
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
-        dotnet-quality: preview
-    - name: Setup .NET Core (for inproc extensions)
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_CORE_VERSION_INPROC }}
-    - name: Restore
-      run: dotnet restore "${{ env.WORKING_DIRECTORY }}"
-    - name: Build
-      run: dotnet build "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
-    - name: Publish
-      run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"
-    - name: Publish Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: functionapp
-        path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-quality: 'preview'
+
+      - name: Restore
+        run: dotnet restore "${{ env.WORKING_DIRECTORY }}/azure-excel-processor.csproj"
+
+      - name: Build
+        run: dotnet build "${{ env.WORKING_DIRECTORY }}/azure-excel-processor.csproj" --configuration ${{ env.CONFIGURATION }} --no-restore
+
+      - name: Publish
+        run: dotnet publish "${{ env.WORKING_DIRECTORY }}/azure-excel-processor.csproj" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: functionapp
+          path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+
   deploy:
     runs-on: ubuntu-latest
     needs: build
     steps:
-    - name: Download artifact from build job
-      uses: actions/download-artifact@v4
-      with:
-        name: functionapp
-        path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-    - name: Azure Login
-      uses: azure/login@v2
-      with:
-        client-id: ${{ vars.multifamily_convert_CLIENT_ID_E9CE }}
-        tenant-id: ${{ vars.multifamily_convert_TENANT_ID_E9CE }}
-        subscription-id: ${{ vars.multifamily_convert_SUBSCRIPTION_ID_E9CE }}
-    - name: Deploy to Azure Function App
-      uses: Azure/functions-action@v1
-      with:
-        app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
-        package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: functionapp
+          path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.multifamily_convert_CLIENT_ID_E9CE }}
+          tenant-id: ${{ vars.multifamily_convert_TENANT_ID_E9CE }}
+          subscription-id: ${{ vars.multifamily_convert_SUBSCRIPTION_ID_E9CE }}
+
+      - name: Deploy to Azure Function App
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          scm-do-build-during-deployment: false
+          enable-oryx-build: false
