@@ -3,10 +3,13 @@ import * as ReactDom from 'react-dom';
 import { Version } from '@microsoft/sp-core-library';
 import {
   type IPropertyPaneConfiguration,
-  PropertyPaneTextField
+  PropertyPaneTextField,
+  PropertyPaneDynamicFieldSet,
+  PropertyPaneDynamicField
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
+import { DynamicProperty } from '@microsoft/sp-component-base';
 
 import * as strings from 'MultifamilyProcessorWebPartStrings';
 import MultifamilyProcessor from './components/MultifamilyProcessor';
@@ -118,8 +121,8 @@ export default class MultifamilyProcessorWebPart extends BaseClientSideWebPart<I
                   label: strings.DescriptionFieldLabel
                 }),
                 PropertyPaneTextField('listId', {
-                  label: 'Document Library ID',
-                  description: 'GUID of the Input Files document library'
+                  label: 'Document Library Name',
+                  description: 'Name of the library to store uploaded files (e.g. XRF Files)'
                 }),
                 PropertyPaneTextField('azureFunctionUrl', {
                   label: 'Azure Function URL',

@@ -7,11 +7,11 @@ permissions:
   id-token: write
   contents: read
 env:
-  AZURE_FUNCTIONAPP_NAME: multifamily-convert
+  AZURE_FUNCTIONAPP_NAME: multifamily-convert-asfchnbjbaf5e0c0
   AZURE_FUNCTIONAPP_PACKAGE_PATH: ./published
   CONFIGURATION: Release
   DOTNET_CORE_VERSION: 10.0.x
-  WORKING_DIRECTORY: .
+  WORKING_DIRECTORY: azure-excel-processor
   DOTNET_CORE_VERSION_INPROC: 6.0.x
 jobs:
   build:
@@ -22,11 +22,11 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
+        dotnet-quality: preview
     - name: Setup .NET Core (for inproc extensions)
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_CORE_VERSION_INPROC }}
-        dotnet-quality: preview
     - name: Restore
       run: dotnet restore "${{ env.WORKING_DIRECTORY }}"
     - name: Build

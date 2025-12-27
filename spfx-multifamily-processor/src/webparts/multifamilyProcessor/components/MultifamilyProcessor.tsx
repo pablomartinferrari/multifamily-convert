@@ -3,8 +3,6 @@ import {
   PrimaryButton,
   MessageBar,
   MessageBarType,
-  Spinner,
-  SpinnerSize,
   ProgressIndicator,
   Label,
   TextField,
@@ -12,9 +10,10 @@ import {
   IDropdownOption,
   Link,
   Stack,
-  Separator
+  Separator,
+  Icon
 } from '@fluentui/react';
-import { HttpClient, HttpClientResponse, IHttpClientOptions, SPHttpClient, SPHttpClientResponse } from '@microsoft/sp-http';
+import { HttpClient, HttpClientResponse, SPHttpClient } from '@microsoft/sp-http';
 import type { IMultifamilyProcessorProps } from './IMultifamilyProcessorProps';
 
 export interface IGeneratedReport {
@@ -24,7 +23,6 @@ export interface IGeneratedReport {
 }
 
 export interface IMultifamilyProcessorState {
-  selectedFiles: any[];
   isProcessing: boolean;
   message: string;
   messageType: MessageBarType;
@@ -33,11 +31,11 @@ export interface IMultifamilyProcessorState {
   fileType: string;
   generatedReports: IGeneratedReport[];
   processingProgress: {
-    stage: 'uploading' | 'processing' | 'generating' | 'complete';
+    stage: 'searching' | 'processing' | 'generating' | 'complete';
     message: string;
     percentComplete: number;
-    currentFile?: string;
-  } | null;
+    foundCount?: number;
+  } | undefined;
 }
 
 const fileTypeOptions: IDropdownOption[] = [
@@ -51,7 +49,6 @@ export default class MultifamilyProcessor extends React.Component<IMultifamilyPr
     super(props);
 
     this.state = {
-      selectedFiles: [],
       isProcessing: false,
       message: '',
       messageType: MessageBarType.info,
@@ -59,125 +56,88 @@ export default class MultifamilyProcessor extends React.Component<IMultifamilyPr
       jobNumber: '',
       fileType: 'Units',
       generatedReports: [],
-      processingProgress: null
+      processingProgress: undefined
     };
-  }
-
-  public componentDidMount(): void {
-    // Start polling for selection changes
-    this._pollSelection();
-  }
-
-  private _pollSelection = (): void => {
-    // Check for selected items in the host list
-    if (this.props.context.sdks.microsoftTeams) return; // Not applicable in Teams
-
-    // This is a common way to get selected items in SPFx web parts when they are on a list page
-    // or when the context provides it.
-    const selectedItems = (this.props.context as any).listView?.selectedItems;
-    if (selectedItems && selectedItems.length > 0) {
-      const files = selectedItems.map((item: any) => ({
-        id: item.id,
-        name: item.fileName || item.name,
-        url: item.fileRef || item.url
-      }));
-
-      // Only update state if selection actually changed to avoid infinite re-renders
-      if (JSON.stringify(files) !== JSON.stringify(this.state.selectedFiles)) {
-        this.setState({ selectedFiles: files });
-      }
-    } else {
-      if (this.state.selectedFiles.length > 0) {
-        this.setState({ selectedFiles: [] });
-      }
-    }
-
-    // Continue polling
-    setTimeout(this._pollSelection, 1000);
   }
 
   public render(): React.ReactElement<IMultifamilyProcessorProps> {
     return (
-      <section style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '4px' }}>
-        <h2>Multifamily Excel Processor</h2>
-        <p>Process Excel files and generate automated reports based on 40-shot / 2.5% rules.</p>
-
+      <section style={{ padding: '25px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+        <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }} style={{ marginBottom: '20px' }}>
+          <Icon iconName="ExcelDocument" style={{ fontSize: '24px', color: '#217346' }} />
+          <h2 style={{ margin: 0 }}>XRF Multifamily Job Processor</h2>
+        </Stack>
+        
         {this.state.showMessage && (
           <MessageBar
             messageBarType={this.state.messageType}
             isMultiline={true}
             onDismiss={() => this.setState({ showMessage: false })}
-            dismissButtonAriaLabel="Close"
             style={{ marginBottom: '20px' }}
           >
             {this.state.message}
           </MessageBar>
         )}
 
-        {this.renderProgress()}
+        <Stack tokens={{ childrenGap: 25 }}>
+          <p style={{ color: '#666', margin: 0 }}>
+            Enter a Job Number to find files in the <strong>{this.props.listId || 'XRF Files'}</strong> library and generate inspection reports.
+          </p>
 
-        <Stack tokens={{ childrenGap: 15 }} style={{ marginBottom: '20px' }}>
-          <TextField
-            label="Job Number"
-            required
-            value={this.state.jobNumber}
-            onChange={(e, val) => this.setState({ jobNumber: val || '' })}
-            placeholder="e.g. 2025-XRF-101"
-            disabled={this.state.isProcessing}
-          />
+          <Stack horizontal tokens={{ childrenGap: 20 }}>
+            <Stack.Item grow={1}>
+              <TextField
+                label="Job Number (Column Value)"
+                required
+                value={this.state.jobNumber}
+                onChange={(e, val) => this.setState({ jobNumber: val || '' })}
+                placeholder="Enter Job Number to search for..."
+                disabled={this.state.isProcessing}
+              />
+            </Stack.Item>
+            <Stack.Item grow={1}>
+              <Dropdown
+                label="Data Type"
+                required
+                selectedKey={this.state.fileType}
+                options={fileTypeOptions}
+                onChange={(e, opt) => this.setState({ fileType: opt?.key as string })}
+                disabled={this.state.isProcessing}
+              />
+            </Stack.Item>
+          </Stack>
 
-          <Dropdown
-            label="File Type"
-            required
-            selectedKey={this.state.fileType}
-            options={fileTypeOptions}
-            onChange={(e, opt) => this.setState({ fileType: opt?.key as string })}
-            disabled={this.state.isProcessing}
+          {this.renderProgress()}
+
+          <PrimaryButton
+            text={this.state.isProcessing ? "Processing..." : "Search & Process Files"}
+            onClick={() => { void this.processJob(); }}
+            disabled={this.state.isProcessing || !this.state.jobNumber}
+            iconProps={{ iconName: 'Search' }}
+            style={{ height: '45px', fontSize: '16px' }}
           />
         </Stack>
 
-        <div style={{ margin: '20px 0' }}>
-          <PrimaryButton
-            text={this.state.isProcessing ? "Processing..." : "Process Selected Files"}
-            onClick={this.processFiles}
-            disabled={this.state.isProcessing || this.state.selectedFiles.length === 0}
-            iconProps={this.state.isProcessing ? { iconName: 'Sync' } : { iconName: 'Document' }}
-          />
-
-          {this.state.isProcessing && (
-            <div style={{ marginTop: '10px' }}>
-              <Spinner size={SpinnerSize.small} label="Calling Azure Function..." />
-            </div>
-          )}
-        </div>
-
         {this.state.generatedReports.length > 0 && (
-          <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f0f9ff', borderRadius: '4px', border: '1px solid #0078d4' }}>
-            <h4 style={{ marginTop: 0 }}>✅ Generated Reports:</h4>
-            <ul style={{ listStyleType: 'none', padding: 0 }}>
-              {this.state.generatedReports.map((report, index) => (
-                <li key={index} style={{ marginBottom: '10px' }}>
-                  <strong>{report.reportType}:</strong> <Link href={report.url} target="_blank">{report.fileName}</Link>
-                </li>
+          <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f0f9ff', borderRadius: '4px', border: '1px solid #0078d4' }}>
+            <h3 style={{ marginTop: 0, fontSize: '18px' }}>✅ Reports Generated</h3>
+            <Stack tokens={{ childrenGap: 10 }}>
+              {this.state.generatedReports.map((report: IGeneratedReport, index: number) => (
+                <div key={index} style={{ padding: '10px', backgroundColor: 'white', borderRadius: '4px', borderLeft: '4px solid #0078d4' }}>
+                  <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 15 }}>
+                    <Icon iconName="ExcelDocument" style={{ color: '#217346', fontSize: '20px' }} />
+                    <Stack grow={1}>
+                      <span style={{ fontWeight: 'bold' }}>{report.reportType}</span>
+                      <span style={{ fontSize: '12px', color: '#666' }}>{report.fileName}</span>
+                    </Stack>
+                    <Link href={report.url} target="_blank" data-interception="off">
+                      Open Report
+                    </Link>
+                  </Stack>
+                </div>
               ))}
-            </ul>
+            </Stack>
           </div>
-        )}
-
-        <Separator>Selected Files</Separator>
-
-        {this.state.selectedFiles.length > 0 ? (
-          <div style={{ marginTop: '10px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-            <ul style={{ paddingLeft: '20px' }}>
-              {this.state.selectedFiles.map((file, index) => (
-                <li key={index} style={{ margin: '5px 0' }}>
-                  📄 {file.name}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : (
-          <p style={{ fontStyle: 'italic', color: '#666' }}>No files selected from the library above.</p>
         )}
       </section>
     );
@@ -187,147 +147,114 @@ export default class MultifamilyProcessor extends React.Component<IMultifamilyPr
     if (!this.state.processingProgress) return null;
 
     return (
-      <div style={{ margin: '20px 0', padding: '15px', backgroundColor: '#e8f4fd', borderRadius: '4px', border: '1px solid #0078d4' }}>
-        <Label>Processing Progress</Label>
+      <div style={{ margin: '10px 0', padding: '15px', backgroundColor: '#f3f2f1', borderRadius: '4px' }}>
         <ProgressIndicator
           label={this.state.processingProgress.message}
-          description={this.state.processingProgress.currentFile}
           percentComplete={this.state.processingProgress.percentComplete / 100}
-          styles={{ progressBar: { backgroundColor: '#0078d4' } }}
         />
       </div>
     );
   }
 
-  private processFiles = async (): Promise<void> => {
+  private processJob = async (): Promise<void> => {
     try {
       this.setState({
         isProcessing: true,
         showMessage: false,
         generatedReports: [],
-        processingProgress: {
-          stage: 'uploading',
-          message: 'Preparing data...',
-          percentComplete: 10
-        }
+        processingProgress: { stage: 'searching', message: `Searching for files with Job Number: ${this.state.jobNumber}...`, percentComplete: 20 }
       });
 
-      const { selectedFiles } = this.state;
+      // 1. Find files in the library matching the job number and type
+      const listName = this.props.listId || 'Documents';
+      const fileUrls = await this._findFilesByJobNumber(listName, this.state.jobNumber, this.state.fileType);
 
-      if (selectedFiles.length === 0) {
-        this.showMessage('No files selected. Please select files from the list first.', MessageBarType.warning);
-        this.setState({ isProcessing: false, processingProgress: null });
-        return;
+      if (fileUrls.length === 0) {
+        throw new Error(`No files found with Job Number '${this.state.jobNumber}' and Type '${this.state.fileType}' in library '${listName}'.`);
       }
 
       this.setState({
-        processingProgress: {
-          stage: 'processing',
-          message: `Sending ${selectedFiles.length} files to Azure Function...`,
-          percentComplete: 30
-        }
+        processingProgress: { stage: 'processing', message: `Found ${fileUrls.length} files. Sending to Azure...`, percentComplete: 50 }
       });
 
-      // 2. Prepare the payload for the Azure Function
+      // 2. Call Azure Function
       const payload = {
         siteUrl: this.props.siteUrl,
-        fileUrls: selectedFiles.map(f => f.url),
-        jobNumber: this.state.jobNumber || 'AUTO-JOB-' + new Date().getTime(),
+        fileUrls: fileUrls,
+        jobNumber: this.state.jobNumber,
         fileType: this.state.fileType,
         userId: this.props.context.pageContext.user.email
       };
 
-      // 3. Call the Azure Function
-      const requestOptions: IHttpClientOptions = {
-        body: JSON.stringify(payload),
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      };
-
-      const functionUrl = this.props.azureFunctionUrl;
-      if (!functionUrl) {
-        throw new Error('Azure Function URL is not configured in web part properties.');
-      }
-
       const response: HttpClientResponse = await this.props.context.httpClient.post(
-        functionUrl,
+        this.props.azureFunctionUrl,
         HttpClient.configurations.v1,
-        requestOptions
+        {
+          body: JSON.stringify(payload),
+          headers: { 'Content-Type': 'application/json' }
+        }
       );
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Azure Function failed: ${response.statusText} (${response.status}). ${errorText}`);
-      }
+      if (!response.ok) throw new Error(`Azure Function error: ${response.statusText}`);
 
       const result = await response.json();
-
       if (result.success) {
         this.setState({
           generatedReports: result.generatedReports,
-          processingProgress: {
-            stage: 'complete',
-            message: 'Processing completed successfully!',
-            percentComplete: 100
-          }
+          processingProgress: { stage: 'complete', message: 'Complete!', percentComplete: 100 }
         });
-        this.showMessage('Successfully processed files and generated reports.', MessageBarType.success);
+        this.showMessage(`Successfully processed ${fileUrls.length} files.`, MessageBarType.success);
       } else {
-        throw new Error(result.message || 'Unknown error occurred during processing.');
+        throw new Error(result.message);
       }
 
-      // Clear progress after a delay
-      setTimeout(() => {
-        this.setState({ processingProgress: null });
-      }, 5000);
-
     } catch (error) {
-      console.error('Error processing files:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      this.showMessage(`Error: ${errorMessage}`, MessageBarType.error);
-      this.setState({ processingProgress: null });
+      console.error(error);
+      this.showMessage(error instanceof Error ? error.message : 'An unexpected error occurred', MessageBarType.error);
     } finally {
-      this.setState({ isProcessing: false });
+      this.setState({ isProcessing: false, processingProgress: undefined });
     }
   }
 
-  private getExcelFiles = async (): Promise<any[]> => {
+  private _findFilesByJobNumber = async (listName: string, jobNumber: string, fileType: string): Promise<string[]> => {
+    const siteUrl = this.props.siteUrl;
+    
+    // Using 'InspectionType' (Capitalized) as specified by the user
+    const endpoint = `${siteUrl}/_api/web/lists/getbytitle('${listName}')/items?$select=FileRef,FileLeafRef,JobNumber,InspectionType&$filter=JobNumber eq '${jobNumber}' and InspectionType eq '${fileType}'`;
+    
+    console.log(`[XRF Processor] Target Library: ${listName}`);
+    console.log(`[XRF Processor] Filtering by Job: ${jobNumber} AND InspectionType: ${fileType}`);
+    console.log(`[XRF Processor] Full Request URL: ${endpoint}`);
+
     try {
-      const listTitle = this.props.listId || 'Documents';
-      const endpoint = `${this.props.siteUrl}/_api/web/lists/getbytitle('${listTitle}')/items?$select=Id,FileLeafRef,FileRef&$filter=substringof('.xlsx',FileLeafRef) or substringof('.xls',FileLeafRef)&$top=20`;
-
-      const response: SPHttpClientResponse = await this.props.context.spHttpClient.get(
-        endpoint,
-        SPHttpClient.configurations.v1
-      );
-
+      const response = await this.props.context.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
+      
       if (!response.ok) {
-        throw new Error(`Error fetching files: ${response.statusText}`);
+        const errorData = await response.json();
+        const errorMessage = errorData?.error?.message?.value || response.statusText;
+        
+        if (response.status === 400 && (errorMessage.indexOf('InspectionType') !== -1 || errorMessage.indexOf('inspectiontype') !== -1)) {
+          throw new Error(`The column 'InspectionType' was not found. Please ensure the Internal Name matches exactly (case-sensitive).`);
+        }
+        
+        throw new Error(`SharePoint Error: ${errorMessage}`);
       }
-
+      
       const data = await response.json();
-      return (data.value || []).map((file: any) => ({
-        id: file.Id,
-        name: file.FileLeafRef || file.Name,
-        url: file.FileRef || file.ServerRelativeUrl
-      }));
-
-    } catch (error) {
-      console.error('Error getting Excel files:', error);
-      return [];
+      const items = data.value || [];
+      
+      return items
+        .filter((item: { FileLeafRef: string }) => {
+          const name = item.FileLeafRef.toLowerCase();
+          return name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv');
+        })
+        .map((item: { FileRef: string }) => item.FileRef);
+    } catch (e) {
+      throw e;
     }
-  }
-
-  private delay = (ms: number): Promise<void> => {
-    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   private showMessage = (message: string, type: MessageBarType): void => {
-    this.setState({
-      message,
-      messageType: type,
-      showMessage: true
-    });
+    this.setState({ message, messageType: type, showMessage: true });
   }
 }
