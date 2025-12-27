@@ -1,0 +1,18 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "multifamily-processor-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/multifamilyProcessor/MultifamilyProcessorWebPart.js",
+          "manifest": "./src/webparts/multifamilyProcessor/MultifamilyProcessorWebPart.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "MultifamilyProcessorWebPartStrings": "lib/webparts/multifamilyProcessor/loc/{locale}.js"
+  }
+}

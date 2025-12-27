@@ -944,3 +944,4 @@ With your Azure Function implemented, proceed to [integrating the components](./
 - Use Azure Queue Storage for long-running processes
 - Monitor memory usage with Application Insights
 
+

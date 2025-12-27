@@ -1,0 +1,23 @@
+# Test Data
+test-data/
+
+# SPFx
+node_modules/
+dist/
+lib/
+lib-commonjs/
+temp/
+sharepoint/*.sppkg
+release/
+*.log
+
+# .NET / Azure Functions
+bin/
+obj/
+azure-excel-processor/local.settings.json
+azure-excel-processor/deploy/main.parameters.json
+
+# OS
+.DS_Store
+Thumbs.db
+

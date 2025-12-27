@@ -401,3 +401,4 @@ With authentication configured, proceed to [building the Azure Function](./04-az
 | Logging | Console | Application Insights |
 | Monitoring | Local Debug | Azure Monitor |
 
+

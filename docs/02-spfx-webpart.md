@@ -29,8 +29,8 @@ gulp --version
 ### Create Project Directory
 
 ```bash
-mkdir spfx-excel-processor
-cd spfx-excel-processor
+mkdir spfx-multifamily-processor
+cd spfx-multifamily-processor
 ```
 
 ### Generate SPFx Web Part
@@ -42,9 +42,9 @@ yo @microsoft/sharepoint
 Answer the prompts:
 
 ```
-? What is your solution name? spfx-excel-processor
+? What is your solution name? spfx-multifamily-processor
 ? Which type of client-side component to create? WebPart
-? What is your Web part name? ExcelProcessor
+? What is your Web part name? MultifamilyProcessor
 ? Which template would you like to use? React
 ? Where do you want to place the files? Use the current folder
 ? Do you want to allow the tenant admin to deploy the solution to all sites? Y
@@ -62,21 +62,21 @@ npm install
 After scaffolding, your project structure should look like:
 
 ```
-spfx-excel-processor/
+spfx-multifamily-processor/
 ├── config/
 │   ├── package-solution.json
 │   ├── serve.json
 │   └── write-manifests.json
 ├── src/
 │   ├── webparts/
-│   │   └── excelProcessor/
+│   │   └── MultifamilyProcessor/
 │   │       ├── components/
-│   │       │   ├── ExcelProcessor.tsx     # Main React component
-│   │       │   └── IExcelProcessorProps.ts
+│   │       │   ├── MultifamilyProcessor.tsx     # Main React component
+│   │       │   └── IMultifamilyProcessorProps.ts
 │   │       ├── loc/
 │   │       │   └── en-us.js
-│   │       ├── ExcelProcessorWebPart.ts   # Web part class
-│   │       └── ExcelProcessorWebPart.manifest.json
+│   │       ├── MultifamilyProcessorWebPart.ts   # Web part class
+│   │       └── MultifamilyProcessorWebPart.manifest.json
 │   └── index.ts
 ├── package.json
 ├── tsconfig.json
@@ -85,10 +85,10 @@ spfx-excel-processor/
 
 ## Step 4: Implement the React Component
 
-### Update IExcelProcessorProps.ts
+### Update IMultifamilyProcessorProps.ts
 
 ```typescript
-export interface IExcelProcessorProps {
+export interface IMultifamilyProcessorProps {
   description: string;
   context: any;
   siteUrl: string;
@@ -101,15 +101,15 @@ export interface IExcelProcessorProps {
 }
 ```
 
-### Create ExcelProcessor.tsx Component
+### Create MultifamilyProcessor.tsx Component
 
 ```tsx
 import * as React from 'react';
-import { IExcelProcessorProps } from './IExcelProcessorProps';
+import { IMultifamilyProcessorProps } from './IMultifamilyProcessorProps';
 import { PrimaryButton, MessageBar, MessageBarType, Spinner, SpinnerSize } from '@fluentui/react';
 import { sp } from '@pnp/sp/presets/all';
 
-export interface IExcelProcessorState {
+export interface IMultifamilyProcessorState {
   selectedFiles: any[];
   isProcessing: boolean;
   message: string;
@@ -117,9 +117,9 @@ export interface IExcelProcessorState {
   showMessage: boolean;
 }
 
-export default class ExcelProcessor extends React.Component<IExcelProcessorProps, IExcelProcessorState> {
+export default class MultifamilyProcessor extends React.Component<IMultifamilyProcessorProps, IMultifamilyProcessorState> {
 
-  constructor(props: IExcelProcessorProps) {
+  constructor(props: IMultifamilyProcessorProps) {
     super(props);
 
     this.state = {
@@ -136,7 +136,7 @@ export default class ExcelProcessor extends React.Component<IExcelProcessorProps
     });
   }
 
-  public render(): React.ReactElement<IExcelProcessorProps> {
+  public render(): React.ReactElement<IMultifamilyProcessorProps> {
     const {
       description,
       isDarkTheme,
@@ -302,7 +302,7 @@ export default class ExcelProcessor extends React.Component<IExcelProcessorProps
 
 ## Step 5: Update the Web Part Class
 
-### ExcelProcessorWebPart.ts
+### MultifamilyProcessorWebPart.ts
 
 ```typescript
 import * as React from 'react';
@@ -315,21 +315,21 @@ import {
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 
-import * as strings from 'ExcelProcessorWebPartStrings';
-import ExcelProcessor from './components/ExcelProcessor';
-import { IExcelProcessorProps } from './components/IExcelProcessorProps';
+import * as strings from 'MultifamilyProcessorWebPartStrings';
+import MultifamilyProcessor from './components/MultifamilyProcessor';
+import { IMultifamilyProcessorProps } from './components/IMultifamilyProcessorProps';
 
-export interface IExcelProcessorWebPartProps {
+export interface IMultifamilyProcessorWebPartProps {
   description: string;
   listId: string;
   azureFunctionUrl: string;
 }
 
-export default class ExcelProcessorWebPart extends BaseClientSideWebPart<IExcelProcessorWebPartProps> {
+export default class MultifamilyProcessorWebPart extends BaseClientSideWebPart<IMultifamilyProcessorWebPartProps> {
 
   public render(): void {
-    const element: React.ReactElement<IExcelProcessorProps> = React.createElement(
-      ExcelProcessor,
+    const element: React.ReactElement<IMultifamilyProcessorProps> = React.createElement(
+      MultifamilyProcessor,
       {
         description: this.properties.description,
         context: this.context,
@@ -406,7 +406,7 @@ export default class ExcelProcessorWebPart extends BaseClientSideWebPart<IExcelP
 {
   "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
   "solution": {
-    "name": "excel-processor-client-side-solution",
+    "name": "multifamily-processor-client-side-solution",
     "id": "7b8f4c2e-1a9d-4f3e-8b7c-5d2e9f1a3b8c",
     "version": "1.0.0.0",
     "includeClientSideAssets": true,
@@ -424,7 +424,7 @@ export default class ExcelProcessorWebPart extends BaseClientSideWebPart<IExcelP
     ]
   },
   "paths": {
-    "zippedPackage": "solution/excel-processor.sppkg"
+    "zippedPackage": "solution/multifamily-processor.sppkg"
   }
 }
 ```
@@ -462,7 +462,7 @@ gulp serve
 
 For better integration with SharePoint document libraries, you can enhance the file selection by using SharePoint's selection API. Here's an improved version:
 
-### Enhanced ExcelProcessor.tsx (File Selection)
+### Enhanced MultifamilyProcessor.tsx (File Selection)
 
 ```tsx
 // Add this method to get selected files from SharePoint's selection context
@@ -546,14 +546,14 @@ gulp package-solution --production
 ## Folder Structure Summary
 
 ```
-spfx-excel-processor/
+spfx-multifamily-processor/
 ├── src/
 │   └── webparts/
-│       └── excelProcessor/
+│       └── MultifamilyProcessor/
 │           ├── components/
-│           │   ├── ExcelProcessor.tsx       # Main React component
-│           │   └── IExcelProcessorProps.ts  # Props interface
-│           └── ExcelProcessorWebPart.ts     # Web part class
+│           │   ├── MultifamilyProcessor.tsx       # Main React component
+│           │   └── IMultifamilyProcessorProps.ts  # Props interface
+│           └── MultifamilyProcessorWebPart.ts     # Web part class
 ├── config/
 │   └── package-solution.json                # Package config
 └── dist/                                   # Built solution
@@ -589,4 +589,5 @@ With your SPFx web part created, proceed to [configuring Azure authentication](.
 - Test in SharePoint Workbench before deploying to production
 - Use `gulp serve --nobrowser` for headless development
 - Enable source maps for better debugging: `gulp build --sourceMap`
+
 

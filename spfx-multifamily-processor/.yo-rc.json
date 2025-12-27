@@ -1,0 +1,19 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "useGulp": false,
+    "plusBeta": false,
+    "isCreatingSolution": true,
+    "nodeVersion": "22.20.0",
+    "sdksVersions": {},
+    "version": "1.22.1",
+    "libraryName": "spfx-multifamily-processor",
+    "libraryId": "5a055c15-a80b-4454-99a5-cd69a31e1f4e",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionName": "spfx-multifamily-processor",
+    "solutionShortDescription": "spfx-multifamily-processor description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "componentType": "webpart"
+  }
+}
