@@ -1,6 +1,8 @@
+import { WebPartContext } from '@microsoft/sp-webpart-base';
+
 export interface IMultifamilyProcessorProps {
   description: string;
-  context: any;
+  context: WebPartContext;
   siteUrl: string;
   listId: string;
   azureFunctionUrl: string;

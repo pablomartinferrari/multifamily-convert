@@ -131,3 +131,4 @@ resource functionApp 'Microsoft.Web/sites@2022-03-01' = {
 output functionAppHostName string = functionApp.properties.defaultHostName
 
 
+

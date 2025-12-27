@@ -945,3 +945,4 @@ With your Azure Function implemented, proceed to [integrating the components](./
 - Monitor memory usage with Application Insights
 
 
+

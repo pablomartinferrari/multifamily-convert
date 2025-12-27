@@ -3,7 +3,7 @@
   "solution": {
     "name": "multi-family-processor",
     "id": "5a055c15-a80b-4454-99a5-cd69a31e1f4e",
-    "version": "1.0.0.0",
+    "version": "1.0.2.0",
     "includeClientSideAssets": true,
     "skipFeatureDeployment": true,
     "isDomainIsolated": false,
@@ -30,7 +30,7 @@
         "title": "Multi-Family Processor Feature",
         "description": "The feature that activates the Excel processing web part.",
         "id": "18391d03-c1d3-477a-b0f1-e29c1aeeda07",
-        "version": "1.0.0.0"
+        "version": "1.0.2.0"
       }
     ]
   },

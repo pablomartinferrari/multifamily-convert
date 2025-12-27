@@ -22,7 +22,9 @@
     "description": { "default": "MultifamilyProcessor description" },
     "officeFabricIconFontName": "Page",
     "properties": {
-      "description": "MultifamilyProcessor"
+      "description": "MultifamilyProcessor",
+      "azureFunctionUrl": "https://multifamily-convert-asfchnbjbaf5e0c0.eastus-01.azurewebsites.net/",
+      "listId": "Documents"
     }
   }]
 }
